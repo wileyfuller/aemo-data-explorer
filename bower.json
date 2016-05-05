@@ -1,0 +1,21 @@
+{
+  "name": "aemo-data-explorer",
+  "authors": [
+    "Wiley Fuller <wiley@alltheducks.com>"
+  ],
+  "description": "Web App for exploring AEMO data",
+  "main": "index.html",
+  "license": "MIT",
+  "homepage": "",
+  "private": true,
+  "ignore": [
+    "**/.*",
+    "node_modules",
+    "bower_components",
+    "test",
+    "tests"
+  ],
+  "dependencies": {
+    "polymer": "Polymer/polymer#^1.4.0"
+  }
+}

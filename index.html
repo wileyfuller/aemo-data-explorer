@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>AEMO Data Explorer</title>
+</head>
+<body>
+
+<script type="text/javascript" src="js/d3.v3.js"></script>
+<script>
+    var qldData = [];
+    var colors = ['#fff7ec','#fee8c8','#fdd49e','#fdbb84','#fc8d59','#ef6548','#d7301f','#b30000','#7f0000']
+    var minDemand = 5000;
+    var maxDemand = 8000;
+    var stepSize = (maxDemand - minDemand) / (colors.length -1);
+    var steps = [];
+    for (var i = 0; i < colors.length; i++) {
+        var step = minDemand + (stepSize * i);
+        steps.push(step);
+    }
+
+    var oReq = new XMLHttpRequest();
+    oReq.open("GET", "data/QLD1-actual-operational-demand.bin", true);
+    oReq.responseType = "arraybuffer";
+
+    oReq.onload = function (oEvent) {
+        var arrayBuffer = oReq.response; // Note: not oReq.responseText
+        if (arrayBuffer) {
+//            var byteArray = new Int32Array(arrayBuffer);
+            var byteArray = new DataView(arrayBuffer);
+            var str = "";
+            for (var i = 0; i < byteArray.byteLength / 4; i++) {
+                var demand = byteArray.getInt32(i * 4, false);
+                qldData.push(demand);
+            }
+            d3.select("body").selectAll("span")
+                    .data(qldData)
+                    .enter()
+                    .append("span")
+                    .text(function(d) {return pad(d, 4) + ' ';})
+                    .style("background-color", function(d) {
+
+                        for (var i = 0; i < steps.length; i++) {
+                            var step = steps[i];
+                            if (step > d) {
+                                return colors[i];
+                            }
+                        }
+
+                    });;
+        }
+    };
+
+    oReq.send(null);
+
+    function pad(num, size) {
+        var s = num+"";
+        while (s.length < size) s = "0" + s;
+        return s;
+    }
+</script>
+
+</body>
+</html>
