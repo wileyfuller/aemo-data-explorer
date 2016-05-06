@@ -5,58 +5,87 @@
     <title>AEMO Data Explorer</title>
 </head>
 <body>
-
-<script type="text/javascript" src="js/d3.v3.js"></script>
-<script>
-    var qldData = [];
-    var colors = ['#fff7ec','#fee8c8','#fdd49e','#fdbb84','#fc8d59','#ef6548','#d7301f','#b30000','#7f0000']
-    var minDemand = 5000;
-    var maxDemand = 8000;
-    var stepSize = (maxDemand - minDemand) / (colors.length -1);
-    var steps = [];
-    for (var i = 0; i < colors.length; i++) {
-        var step = minDemand + (stepSize * i);
-        steps.push(step);
+<style>
+    .heatmap {
+        width: 576px;
+        line-height: 10px;
     }
 
+    .demand-interval {
+        height: 10px;
+        width: 10px;
+        border: 1px solid white;
+        display: inline-block;
+    }
+</style>
+
+<script type="text/javascript" src="js/d3.v3.js"></script>
+<script type="text/javascript" src="js/colorbrewer.js"></script>
+<script>
+    var qldData = [];
+    var regionId = getParameterByName("regionid")
+
     var oReq = new XMLHttpRequest();
-    oReq.open("GET", "data/QLD1-actual-operational-demand.bin", true);
+    if (regionId) {
+        oReq.open("GET", "data/" + regionId + "-actual-operational-demand.bin", true);
+    } else {
+        oReq.open("GET", "data/all.bin", true);
+    }
     oReq.responseType = "arraybuffer";
 
     oReq.onload = function (oEvent) {
         var arrayBuffer = oReq.response; // Note: not oReq.responseText
         if (arrayBuffer) {
-//            var byteArray = new Int32Array(arrayBuffer);
+
             var byteArray = new DataView(arrayBuffer);
             var str = "";
             for (var i = 0; i < byteArray.byteLength / 4; i++) {
                 var demand = byteArray.getInt32(i * 4, false);
                 qldData.push(demand);
             }
-            d3.select("body").selectAll("span")
-                    .data(qldData)
-                    .enter()
-                    .append("span")
-                    .text(function(d) {return pad(d, 4) + ' ';})
-                    .style("background-color", function(d) {
+            var body = d3.select("body");
+            var heatmapCanvas = body.append("canvas")
+                    .attr("width", 2000)
+                    .attr("height", 500);
 
-                        for (var i = 0; i < steps.length; i++) {
-                            var step = steps[i];
-                            if (step > d) {
-                                return colors[i];
-                            }
-                        }
+            var context = heatmapCanvas.node().getContext("2d");
 
-                    });;
+            var colorScale = d3.scale.quantile()
+                    .domain([d3.min(qldData), d3.max(qldData)])
+                    .range(d3.range(11));
+
+
+            qldData.forEach(function (d, i) {
+                var y = (i % 48) * 10;
+                var x = Math.floor(i / 48) * 10;
+                var color = colorbrewer.Spectral[11][colorScale(d)];
+                context.beginPath();
+                context.rect(x, y, 10, 10);
+                context.fillStyle = color;
+                context.fill();
+                context.closePath();
+            });
+
+
         }
     };
 
     oReq.send(null);
 
     function pad(num, size) {
-        var s = num+"";
+        var s = num + "";
         while (s.length < size) s = "0" + s;
         return s;
+    }
+
+    function getParameterByName(name, url) {
+        if (!url) url = window.location.href;
+        name = name.replace(/[\[\]]/g, "\\$&");
+        var regex = new RegExp("[?&]" + name + "(=([^&#]*)|&|#|$)"),
+                results = regex.exec(url);
+        if (!results) return null;
+        if (!results[2]) return '';
+        return decodeURIComponent(results[2].replace(/\+/g, " "));
     }
 </script>
 
