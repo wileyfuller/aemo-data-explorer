@@ -22,7 +22,7 @@
 <script type="text/javascript" src="js/d3.v3.js"></script>
 <script type="text/javascript" src="js/colorbrewer.js"></script>
 <script>
-    var qldData = [];
+    var data = [];
     var regionId = getParameterByName("regionid")
 
     var oReq = new XMLHttpRequest();
@@ -41,7 +41,7 @@
             var str = "";
             for (var i = 0; i < byteArray.byteLength / 4; i++) {
                 var demand = byteArray.getInt32(i * 4, false);
-                qldData.push(demand);
+                data.push(demand);
             }
             var body = d3.select("body");
             var heatmapCanvas = body.append("canvas")
@@ -51,16 +51,22 @@
             var context = heatmapCanvas.node().getContext("2d");
 
             var colorScale = d3.scale.quantile()
-                    .domain([d3.min(qldData), d3.max(qldData)])
+                    .domain([d3.min(data, function(val) {
+                        console.log(val);
+                                return val > 0 ? val : null;
+                            }), d3.max(data)])
                     .range(d3.range(11));
 
 
-            qldData.forEach(function (d, i) {
-                var y = (i % 48) * 10;
-                var x = Math.floor(i / 48) * 10;
+            data.forEach(function (d, i) {
+                if (d == 0) {
+                    return;
+                }
+                var y = (i % 48) * 6;
+                var x = Math.floor(i / 48) * 11;
                 var color = colorbrewer.Spectral[11][colorScale(d)];
                 context.beginPath();
-                context.rect(x, y, 10, 10);
+                context.rect(x, y, 10, 5);
                 context.fillStyle = color;
                 context.fill();
                 context.closePath();
