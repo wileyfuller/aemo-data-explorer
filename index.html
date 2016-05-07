@@ -7,8 +7,9 @@
 <body>
 <style>
     .heatmap {
-        width: 576px;
-        line-height: 10px;
+        position: relative;
+        /*width: 576px;*/
+        /*line-height: 10px;*/
     }
 
     .demand-interval {
@@ -19,8 +20,12 @@
     }
 </style>
 
+<div class="heatmap"></div>
+
 <script type="text/javascript" src="js/d3.v3.js"></script>
 <script type="text/javascript" src="js/colorbrewer.js"></script>
+<script type="text/javascript" src="js/moment.js"></script>
+
 <script>
     var data = [];
     var regionId = getParameterByName("regionid")
@@ -43,34 +48,98 @@
                 var demand = byteArray.getInt32(i * 4, false);
                 data.push(demand);
             }
+
+            var colWidth = 10;
+            var colPadding = 1;
+            var rowHeight = 5;
+            var rowPadding = 1;
+            var monthLegendHeight = 40;
+            var monthLegendPadding = 1;
+
+            var canvasWidth = (data.length / 48) * (colWidth + colPadding);
+            var canvasHeight = 48 * (rowHeight + rowPadding) + monthLegendHeight;
+
             var body = d3.select("body");
-            var heatmapCanvas = body.append("canvas")
-                    .attr("width", 2000)
-                    .attr("height", 500);
+
+            var heatmap = d3.select("body").select(".heatmap")
+            heatmap.style('width', "" + canvasWidth + "px").style('height', "" + canvasHeight + "px");
+            var heatmapCanvas = heatmap.append("canvas")
+                    .attr("width", canvasWidth)
+                    .attr("height", canvasHeight);
 
             var context = heatmapCanvas.node().getContext("2d");
 
             var colorScale = d3.scale.quantile()
-                    .domain([d3.min(data, function(val) {
-                        console.log(val);
-                                return val > 0 ? val : null;
-                            }), d3.max(data)])
-                    .range(d3.range(11));
+                    .domain([d3.min(data, function (val) {
+                        return val > 0 ? val : null;
+                    }), d3.max(data)])
+                    .range(d3.range(11).reverse());
 
 
             data.forEach(function (d, i) {
-                if (d == 0) {
-                    return;
-                }
                 var y = (i % 48) * 6;
                 var x = Math.floor(i / 48) * 11;
-                var color = colorbrewer.Spectral[11][colorScale(d)];
+                var color = d != 0 ? colorbrewer.Spectral[11][colorScale(d)] : "#d3d3d3";
                 context.beginPath();
                 context.rect(x, y, 10, 5);
                 context.fillStyle = color;
                 context.fill();
                 context.closePath();
             });
+
+//            var minDate = new Date('2016-02-12');
+//            var maxDate = new Date('2016-02-14');
+            var minDate = new Date('2016-02-12');
+            var maxDate = new Date('2016-05-07');
+
+
+
+            var startDate = minDate;
+            var endDate = null;
+            var lastMonthEndXPos = 0;
+            var monthLegendYPos = canvasHeight - monthLegendHeight + 1;
+            var monthLegendContentHeight = monthLegendHeight - monthLegendPadding;
+            while (true) {
+
+                var a = moment(startDate);
+                endDate = new Date(startDate.getFullYear(), startDate.getMonth() + 1, 1);
+                if (endDate > maxDate) {
+                    endDate = maxDate;
+                }
+//                window.console.log('end date', endDate);
+                var b = moment(endDate);
+                var numDays = b.diff(a, 'days') + 1;
+                var endOffsetX = (numDays * (colWidth + colPadding)) - colPadding;
+                var textHeight = 16;
+                var textY = (monthLegendContentHeight ) / 2 + textHeight / 2 + monthLegendYPos;
+
+                context.beginPath();
+                context.rect(lastMonthEndXPos, monthLegendYPos, endOffsetX, monthLegendContentHeight);
+                context.fillStyle = "silver";
+                context.fill();
+                context.fillStyle = "black";
+                context.font = "" + textHeight + "px sans-serif";
+                context.textBaseline = "ideographic";
+
+                //TODO This '10' needs removing.  Month name should be centred. Need to measure text width to do this.
+                context.fillText(a.format('MMMM'), lastMonthEndXPos + 10, textY);
+                context.closePath();
+
+                lastMonthEndXPos = lastMonthEndXPos + endOffsetX + colPadding;
+                if (endDate == maxDate) {
+                    break;
+                }
+                startDate = endDate;
+
+                window.console.log(Math.floor(data.length / 48))
+                window.console.log(numDays);
+                window.console.log(b.diff(a, 'months'));
+
+//                window.console.log(moment(new Date('2016-03-01')).subtract(1, 'day'));
+
+//                break;
+            }
+
 
 
         }
