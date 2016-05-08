@@ -8,8 +8,6 @@
 <style>
     .heatmap {
         position: relative;
-        /*width: 576px;*/
-        /*line-height: 10px;*/
     }
 
     .demand-interval {
@@ -18,9 +16,15 @@
         border: 1px solid white;
         display: inline-block;
     }
+    .heatmap-inner {
+        width: 450px;
+        overflow-x: scroll;
+    }
 </style>
 
-<div class="heatmap"></div>
+<div class="heatmap">
+    <div class="heatmap-inner"></div>
+</div>
 
 <script type="text/javascript" src="js/d3.v3.js"></script>
 <script type="text/javascript" src="js/colorbrewer.js"></script>
@@ -61,8 +65,8 @@
 
             var body = d3.select("body");
 
-            var heatmap = d3.select("body").select(".heatmap")
-            heatmap.style('width', "" + canvasWidth + "px").style('height', "" + canvasHeight + "px");
+            var heatmap = d3.select("body").select(".heatmap-inner")
+            heatmap.style('height', "" + (canvasHeight + 15) + "px");
             var heatmapCanvas = heatmap.append("canvas")
                     .attr("width", canvasWidth)
                     .attr("height", canvasHeight);
@@ -89,8 +93,8 @@
 
 //            var minDate = new Date('2016-02-12');
 //            var maxDate = new Date('2016-02-14');
-            var minDate = new Date('2016-02-12');
-            var maxDate = new Date('2016-05-07');
+            var minDate = new Date(2016,01,12);
+            var maxDate = new Date(2016,04,08);
 
 
 
@@ -108,7 +112,7 @@
                 }
 //                window.console.log('end date', endDate);
                 var b = moment(endDate);
-                var numDays = b.diff(a, 'days') + 1;
+                var numDays = b.diff(a, 'days');
                 var endOffsetX = (numDays * (colWidth + colPadding)) - colPadding;
                 var textHeight = 16;
                 var textY = (monthLegendContentHeight ) / 2 + textHeight / 2 + monthLegendYPos;
@@ -117,7 +121,7 @@
                 context.rect(lastMonthEndXPos, monthLegendYPos, endOffsetX, monthLegendContentHeight);
                 context.fillStyle = "silver";
                 context.fill();
-                context.fillStyle = "black";
+                context.fillStyle = "white";
                 context.font = "" + textHeight + "px sans-serif";
                 context.textBaseline = "ideographic";
 
